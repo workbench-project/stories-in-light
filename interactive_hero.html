@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stories in Light</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-base: #2b3342;
+            --text-color: #f0f0ee;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            border-radius: 0; /* Zero border radius globally as requested */
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-color);
+            font-family: 'Archivo', sans-serif;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        a {
+            color: #f3f2f2;
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: #ffffff;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .hero {
+            position: relative;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background-color: var(--bg-base);
+            /* Required for relative cursor coordinate calculations */
+            cursor: crosshair; 
+        }
+
+        .bg-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            transform: translateZ(0); /* GPU-composited */
+        }
+
+        .bg-base-portrait {
+            z-index: 0;
+            user-select: none;
+        }
+
+        .bg-gold-base {
+            z-index: 1;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+        .bg-gold-reveal {
+            z-index: 2;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease-out;
+            will-change: opacity, -webkit-mask-position, mask-position;
+            
+            /* CSS Mask setup */
+            -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+            mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            -webkit-mask-size: 110px 140px;
+            mask-size: 110px 140px;
+        }
+
+        .bg-scrim {
+            z-index: 3;
+            pointer-events: none;
+            background: linear-gradient(180deg, rgba(20,24,32,0.55) 0%, rgba(20,24,32,0.12) 45%, rgba(20,24,32,0.6) 100%);
+        }
+
+        .overlay {
+            position: relative;
+            z-index: 4;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 44px 64px 40px;
+            pointer-events: none;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+
+        .top-bar-left {
+            display: flex;
+            gap: 28px;
+        }
+
+        .top-bar-center-pill {
+            border: 1.5px solid var(--text-color);
+            border-radius: 999px !important; /* Specific exception to global border-radius: 0 */
+            padding: 4px 20px;
+            font-size: 15px;
+        }
+
+        .top-bar-right {
+            display: flex;
+            gap: 14px;
+        }
+
+        .headline {
+            margin-top: 40px;
+            font-size: clamp(52px, 7.4vw, 104px);
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            line-height: 0.98;
+            text-transform: lowercase;
+            text-align: left;
+        }
+
+        .headline-line-2 {
+            display: inline-flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .circle-plus {
+            width: 0.8em;
+            height: 0.8em;
+            border: 1.5px solid var(--text-color);
+            border-radius: 50% !important; /* Specific exception to global border-radius: 0 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.45em;
+            font-weight: 400;
+            /* optical adjustment to visually center the + within the circle */
+            padding-top: 0.05em; 
+        }
+
+        .bottom-row {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 48px;
+        }
+
+        .bottom-left-title {
+            font-size: 18px;
+            font-weight: 500;
+            line-height: 1.45;
+        }
+
+        .bottom-right-block {
+            max-width: 560px;
+            width: 100%;
+        }
+
+        .bottom-right-block p {
+            text-align: justify;
+            font-size: 15.5px;
+            line-height: 1.6;
+            word-spacing: 0.15em;
+        }
+
+        .bottom-metadata {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            letter-spacing: 0.02em;
+        }
+
+        /* Touch Device Responsive Adjustments */
+        @media (max-width: 768px) {
+            .overlay {
+                padding: 24px 20px 24px;
+            }
+            .bottom-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 24px;
+            }
+            .top-bar-center-pill {
+                display: none; /* Simplification for narrow screens */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <section class="hero" id="hero-section">
+        
+        <!-- 1. Clean Portrait (Bottom) -->
+        <img src="https://cdn.sceneai.art/Bg%20images/ddfc017a-6d87-42c8-b9d6-c068c2854910.png" 
+             class="bg-layer bg-base-portrait" 
+             draggable="false" 
+             alt="Clean dark portrait">
+
+        <!-- 2. Gold Layer at 10% -->
+        <img src="https://cdn.sceneai.art/Bg%20images/27a6b99b-8093-439e-be9c-1c96311e8fb8.png" 
+             class="bg-layer bg-gold-base" 
+             alt="Gold portrait shadow">
+
+        <!-- 3. Gold Reveal Layer (Clipped by mask) -->
+        <img src="https://cdn.sceneai.art/Bg%20images/27a6b99b-8093-439e-be9c-1c96311e8fb8.png" 
+             class="bg-layer bg-gold-reveal" 
+             id="gold-reveal"
+             alt="Gold portrait reveal">
+
+        <!-- 4. Gradient Scrim -->
+        <div class="bg-layer bg-scrim"></div>
+
+        <!-- 5. Content Overlay -->
+        <div class="overlay">
+            
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <span>faruq®</span>
+                    <span>visual archive</span>
+                </div>
+                <div class="top-bar-center-pill">
+                    ©2026
+                </div>
+                <div class="top-bar-right">
+                    <span>(</span>
+                    <span>long exposure</span>
+                    <span>/</span>
+                    <span>low light</span>
+                    <span>)</span>
+                </div>
+            </div>
+
+            <h1 class="headline">
+                stories in light<br>
+                <div class="headline-line-2">
+                    <span class="circle-plus">+</span>
+                    <span>motion</span>
+                </div>
+            </h1>
+
+            <div class="bottom-row">
+                <div class="bottom-left-title">
+                    night work only
+                </div>
+                <div class="bottom-right-block">
+                    <p>slow shutters, moving light. i make short visual stories after dark — where motion becomes the subject and light does the drawing. no studio, no staging: just time, left open long enough to leave a trace.</p>
+                    <div class="bottom-metadata">
+                        <span>selected work — vol.01</span>
+                        <span>( scroll ↓ )</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Only execute interaction script on devices with fine pointer support
+            if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                
+                const hero = document.getElementById('hero-section');
+                const revealLayer = document.getElementById('gold-reveal');
+                
+                let targetX = 0;
+                let targetY = 0;
+                let currentX = 0;
+                let currentY = 0;
+                let firstMove = true;
+                let rafId = null;
+
+                // Update mask CSS position
+                const updateMask = () => {
+                    // Center the 110x140 mask over the cursor coordinates
+                    const maskX = currentX - 55;
+                    const maskY = currentY - 70;
+                    revealLayer.style.webkitMaskPosition = `${maskX}px ${maskY}px`;
+                    revealLayer.style.maskPosition = `${maskX}px ${maskY}px`;
+                };
+
+                // Request Animation Frame loop for linear interpolation
+                const lerpLoop = () => {
+                    const dx = targetX - currentX;
+                    const dy = targetY - currentY;
+
+                    // Stop the loop if the delta is very small
+                    if (Math.abs(dx) < 0.3 && Math.abs(dy) < 0.3) {
+                        currentX = targetX;
+                        currentY = targetY;
+                        updateMask();
+                        rafId = null;
+                        return;
+                    }
+
+                    // Lerp factor 0.22 per frame as specified
+                    currentX += dx * 0.22;
+                    currentY += dy * 0.22;
+                    updateMask();
+                    rafId = requestAnimationFrame(lerpLoop);
+                };
+
+                // Track mouse movement inside the hero section
+                hero.addEventListener('mousemove', (e) => {
+                    const rect = hero.getBoundingClientRect();
+                    targetX = e.clientX - rect.left;
+                    targetY = e.clientY - rect.top;
+
+                    // Snap to cursor and reveal instantly on first entry
+                    if (firstMove) {
+                        currentX = targetX;
+                        currentY = targetY;
+                        revealLayer.style.opacity = '1';
+                        updateMask();
+                        firstMove = false;
+                    }
+
+                    // Ensure loop is running
+                    if (!rafId) {
+                        lerpLoop();
+                    }
+                });
+
+                // Fade out reveal layer when mouse leaves the section
+                hero.addEventListener('mouseleave', () => {
+                    revealLayer.style.opacity = '0';
+                    firstMove = true;
+                    // Note: lerpLoop will naturally settle and stop, saving resources
+                });
+            }
+        });
+    </script>
+</body>
+</html>
